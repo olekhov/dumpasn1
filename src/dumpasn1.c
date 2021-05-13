@@ -9,8 +9,8 @@
 
    Available from http://www.cs.auckland.ac.nz/~pgut001/dumpasn1.c. Last
    updated 28 September 2020 (version 20200928, if you prefer it that way,
-   see also UPDATE_STRING below).  To build under Windows, use 
-   'cl /MD dumpasn1.c'.  To build on OS390 or z/OS, use 
+   see also UPDATE_STRING below).  To build under Windows, use
+   'cl /MD dumpasn1.c'.  To build on OS390 or z/OS, use
    '/bin/c89 -D OS390 -o dumpasn1 dumpasn1.c'.
 
    This code grew slowly over time without much design or planning, and with
@@ -37,7 +37,7 @@
    This code assumes that the input data is binary, having come from a MIME-
    aware mailer or been piped through a decoding utility if the original
    format used base64 encoding.  If you need to decode it, it's recommended
-   that you use a utility like uudeview, which will strip most kinds of 
+   that you use a utility like uudeview, which will strip most kinds of
    encoding (MIME, PEM, PGP, whatever) to recover the binary original.
 
    You can use this code in whatever way you want, as long as you don't try
@@ -46,9 +46,9 @@
    (Someone asked for clarification on what this means, treat it as a very
    mild form of the BSD license in which you're not required to include LONG
    LEGAL DISCLAIMERS IN ALL CAPS but just a small note in a corner somewhere
-   (e.g. the back of a manual) that you're using the dumpasn1 code.  If you 
-   do use it, please make sure you're using a recent version, I occasionally 
-   see screen shots from incredibly ancient versions that are nowhere near 
+   (e.g. the back of a manual) that you're using the dumpasn1 code.  If you
+   do use it, please make sure you're using a recent version, I occasionally
+   see screen shots from incredibly ancient versions that are nowhere near
    as good as what current versions produce.  Finally, see the note earlier
    about this being purely a debugging tool and not production-quality code).
 
@@ -63,6 +63,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <locale.h>
 #ifdef OS390
   #include <unistd.h>
 #endif /* OS390 */
@@ -634,13 +635,14 @@ static int readLine( FILE *file, char *buffer )
 		{
 		/* Check for an illegal char in the data.  Note that we don't just
 		   check for chars with high bits set because these are legal in
-		   non-ASCII strings */
+		   non-ASCII strings
 		if( !isprint( ch ) )
 			{
 			printf( "Bad character '%c' in config file line %d.\n",
 					ch, lineNo );
 			return( FALSE );
 			}
+		*/
 
 		/* Check to see if it's a comment line */
 		if( ch == '#' && !bufCount )
@@ -2080,7 +2082,7 @@ static void displayString( FILE *inFile, long length, int level,
 				printString( level, "%c%c", timeStr[ 0 ], timeStr[ 1 ] );
 				if( timeStr[ 0 ] == '2' && timeStr[ 1 ] >= '1' )
 					{
-					/* There actually are certificates like this out 
+					/* There actually are certificates like this out
 					   there... */
 					warnTimeT = warnTimeCrazy = TRUE;
 					}
@@ -2750,7 +2752,7 @@ static void printASN1object( FILE *inFile, ASN1_ITEM *item, int level )
 
 			if( item->length < 1 )
 				{
-				/* A bitstring always has to contain at least one byte, the unused-bits 
+				/* A bitstring always has to contain at least one byte, the unused-bits
 				   count */
 				complainLength( item, level );
 				}
@@ -2897,12 +2899,12 @@ static void printASN1object( FILE *inFile, ASN1_ITEM *item, int level )
 				{
 				if( item->length > MAX_SANE_OID_SIZE )
 					{
-					/* This typically only occurs with Microsoft's "encode 
-					   random noise and call it an OID" values, so we warn 
+					/* This typically only occurs with Microsoft's "encode
+					   random noise and call it an OID" values, so we warn
 					   about the fact that it's not really an OID */
 					complain( "OID contains random garbage", 0, level );
 					}
-				}			
+				}
 			else
 				complain( "OID has invalid encoding", 0, level );
 			if( item->nonCanonical )
@@ -3051,16 +3053,16 @@ static long processObjectStart( FILE *inFile, const ASN1_ITEM *item )
 		if( i >= 4 && \
 			item->header[ 0 ] == 0x30 || item->header[ 0 ] == 0x31 )
 			{
-			/* Special-case handling for situations that would produce a 
-			   false positive, items containing nested SEQUENCE (0x30)/SET 
+			/* Special-case handling for situations that would produce a
+			   false positive, items containing nested SEQUENCE (0x30)/SET
 			   (0x31) of an appropriate length will look like ASCII since
 			   the encoding is 0x30 0xXX 0x30 0xXX 0x30 0xXX, e.g. "0g0e0c",
 			   so we check for the pattern [0|1] alnum [0|1] alnum ... */
 			if( buffer[ 2 ] == 0x30 || buffer[ 2 ] == 0x31 )
 				{
 				/* It's at least 0x30 0xXX 0x30 0xXX, assume it's binary.
-				   This can lead to a minute number of false negatives, but 
-				   that's OK since (a) it's no any normal encoding format 
+				   This can lead to a minute number of false negatives, but
+				   that's OK since (a) it's no any normal encoding format
 				   for ASN.1 binary data and (b) all it'll do is produce
 				   an attempt to decode text as ASN.1 */
 				i = 0;
@@ -3095,7 +3097,7 @@ static int printAsn1( FILE *inFile, const int level, long length,
 	/* Bail out on suspiciously complex data */
 	if( level > MAX_NESTING_LEVEL )
 		{
-		complain( "Object contains more than %d levels of nesting", 
+		complain( "Object contains more than %d levels of nesting",
 				  MAX_NESTING_LEVEL, level );
 		exit( EXIT_FAILURE );
 		}
@@ -3285,6 +3287,7 @@ static void usageExit( void )
 
 int main( int argc, char *argv[] )
 	{
+	setlocale(LC_ALL, "");
 	FILE *inFile, *outFile = NULL;
 #ifdef __WIN32__
 	CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
